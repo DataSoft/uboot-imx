@@ -147,7 +147,7 @@
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
-	"console=ttymxc0\0" \
+	"console=ttymxc4\0" \
 	"fdt_file=varsom-1233.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"fdt_high=0xffffffff\0" \
