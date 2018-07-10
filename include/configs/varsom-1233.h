@@ -56,7 +56,14 @@
 #define CONFIG_SYS_I2C_MXC_I2C1		/* enable I2C bus 1 */
 #define CONFIG_SYS_I2C_MXC_I2C2		/* enable I2C bus 2 */
 #define CONFIG_SYS_I2C_SPEED		100000
-#endif
+
+#define CONFIG_CMD_EEPROM
+#define CONFIG_ID_EEPROM
+#define CONFIG_SYS_I2C_EEPROM_NXID
+#define CONFIG_SYS_I2C_EEPROM_ADDR		0x50
+#define CONFIG_SYS_I2C_EEPROM_ADDR_LEN	2
+#define CONFIG_SYS_EEPROM_BUS_NUM		0
+#endif /* CONFIG_CMD_I2C */
 
 #define NAND_BOOT_ENV_SETTINGS \
 	"nandargs=setenv bootargs console=${console},${baudrate} " \
@@ -114,7 +121,7 @@
 #define CONFIG_BOOTCOMMAND \
 	"run ramsize_check; " \
 	"run nandboot || " \
-	"run netboot"
+	"run ums 0 mmc 1"
 
 #else
 #define BOOT_ENV_SETTINGS	MMC_BOOT_ENV_SETTINGS
@@ -130,15 +137,15 @@
 		"else " \
 			"if run loadimage; then " \
 				"run mmcboot; " \
-			"else run netboot; " \
+			"else run ums 0 mmc 1; " \
 			"fi; " \
 		"fi; " \
-	"else run netboot; fi"
+	"else run ums 0 mmc 1; fi"
 
 #endif
 
 #define OPT_ENV_SETTINGS \
-	"optargs=setenv bootargs ${bootargs} ${kernelargs};\0"
+	"optargs=setenv bootargs ${bootargs} g_cdc.host_addr=${eth2addr} g_cdc.dev_addr=${eth3addr} ds_serial=${serial} ${kernelargs};\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	BOOT_ENV_SETTINGS \
@@ -148,6 +155,7 @@
 	"script=boot.scr\0" \
 	"image=zImage\0" \
 	"console=ttymxc4\0" \
+	"kernelargs=systemd.journald.forward_to_console=1\0" \
 	"fdt_file=varsom-1233.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"fdt_high=0xffffffff\0" \
@@ -164,31 +172,6 @@
 	"netargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/nfs ${cma_size} " \
 		"ip=dhcp nfsroot=${serverip}:${nfsroot},v3,tcp\0" \
-	"netboot=echo Booting from net ...; " \
-		"run netargs; " \
-		"run optargs; " \
-		"if test ${ip_dyn} = yes; then " \
-			"setenv get_cmd dhcp; " \
-		"else " \
-			"setenv get_cmd tftp; " \
-		"fi; " \
-		"${get_cmd} ${image}; " \
-		"if test ${boot_fdt} = yes || test ${boot_fdt} = try; then " \
-			"echo fdt_file=${fdt_file}; " \
-			"if ${get_cmd} ${fdt_addr} ${fdt_file}; then " \
-				"bootz ${loadaddr} - ${fdt_addr}; " \
-			"else " \
-				"if test ${boot_fdt} = try; then " \
-					"bootz; " \
-				"else " \
-					"echo WARN: Cannot load the DT; " \
-				"fi; " \
-			"fi; " \
-		"else " \
-			"bootz; " \
-		"fi;\0" \
-	"usbnet_devaddr=f8:dc:7a:00:00:02\0" \
-	"usbnet_hostaddr=f8:dc:7a:00:00:01\0" \
 	"ramsize_check="\
 		"if test $sdram_size -lt 256; then " \
 			"setenv cma_size cma=32MB; " \
@@ -356,7 +339,7 @@
 #endif
 #elif (CONFIG_FEC_ENET_DEV == 1)
 #define IMX_FEC_BASE			ENET2_BASE_ADDR
-#define CONFIG_FEC_MXC_PHYADDR		0x1
+#define CONFIG_FEC_MXC_PHYADDR		0x3
 #define CONFIG_FEC_XCV_TYPE		RMII
 #ifdef CONFIG_DM_ETH
 #define CONFIG_ETHPRIME			"eth1"

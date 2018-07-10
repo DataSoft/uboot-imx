@@ -3,4 +3,4 @@
 # SPDX-License-Identifier:	GPL-2.0+
 #
 
-obj-y  := varsom.o mx6var_eeprom_v2.o
+obj-y  := varsom.o mx6var_eeprom_v2.o sys_eeprom.o
