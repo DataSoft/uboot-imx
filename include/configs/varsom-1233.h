@@ -155,7 +155,7 @@
 	"script=boot.scr\0" \
 	"image=zImage\0" \
 	"console=ttymxc4\0" \
-	"kernelargs=systemd.journald.forward_to_console=1\0" \
+	"kernelargs=\0" \
 	"fdt_file=varsom-1233.dtb\0" \
 	"fdt_addr=0x83000000\0" \
 	"fdt_high=0xffffffff\0" \
