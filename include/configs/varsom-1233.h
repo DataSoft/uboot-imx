@@ -145,7 +145,7 @@
 #endif
 
 #define OPT_ENV_SETTINGS \
-	"optargs=setenv bootargs ${bootargs} g_cdc.host_addr=${eth2addr} g_cdc.dev_addr=${eth3addr} ds_serial=${serial} ${kernelargs};\0"
+	"optargs=setenv bootargs ${bootargs} g_ether.host_addr=${eth2addr} g_ether.dev_addr=${eth3addr} ds_serial=${serial} ${kernelargs};\0"
 
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	BOOT_ENV_SETTINGS \
