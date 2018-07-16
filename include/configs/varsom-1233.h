@@ -82,22 +82,22 @@
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
 	"mmcblk=0\0" \
 	"mmcautodetect=yes\0" \
-	"mmcbootpart=1\0" \
-	"mmcrootpart=2\0" \
+	"bootdir=/boot\0" \
+	"mmcrootpart=1\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/mmcblk${mmcblk}p${mmcrootpart} rootwait rw " \
 		"${cma_size}\0" \
 	"loadbootenv=" \
-		"load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${bootenv}\0" \
+		"load mmc ${mmcdev}:${mmcrootpart} ${loadaddr} ${bootdir}/${bootenv}\0" \
 	"importbootenv=echo Importing bootenv from mmc ...; " \
 		"env import -t ${loadaddr} ${filesize}\0" \
 	"loadbootscript=" \
-		"load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${script};\0" \
+		"load mmc ${mmcdev}:${mmcrootpart} ${loadaddr} ${bootdir}/${script};\0" \
 	"bootscript=echo Running bootscript from mmc ...; " \
 		"source\0" \
-	"loadimage=load mmc ${mmcdev}:${mmcbootpart} ${loadaddr} ${bootdir}/${image}\0" \
+	"loadimage=load mmc ${mmcdev}:${mmcrootpart} ${loadaddr} ${bootdir}/${image}\0" \
 	"loadfdt=echo fdt_file=${fdt_file}; " \
-		"load mmc ${mmcdev}:${mmcbootpart} ${fdt_addr} ${bootdir}/${fdt_file}\0" \
+		"load mmc ${mmcdev}:${mmcrootpart} ${fdt_addr} ${bootdir}/${fdt_file}\0" \
 	"mmcboot=echo Booting from mmc ...; " \
 		"run mmcargs; " \
 		"run optargs; " \
@@ -121,7 +121,7 @@
 #define CONFIG_BOOTCOMMAND \
 	"run ramsize_check; " \
 	"run nandboot || " \
-	"run ums 0 mmc 1"
+	"ums 0 mmc 1"
 
 #else
 #define BOOT_ENV_SETTINGS	MMC_BOOT_ENV_SETTINGS
@@ -137,10 +137,10 @@
 		"else " \
 			"if run loadimage; then " \
 				"run mmcboot; " \
-			"else run ums 0 mmc 1; " \
+			"else ums 0 mmc 1; " \
 			"fi; " \
 		"fi; " \
-	"else run ums 0 mmc 1; fi"
+	"else ums 0 mmc 1; fi"
 
 #endif
 
