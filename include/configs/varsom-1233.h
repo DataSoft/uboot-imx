@@ -80,7 +80,7 @@
 
 #define MMC_BOOT_ENV_SETTINGS \
 	"mmcdev="__stringify(CONFIG_SYS_MMC_ENV_DEV)"\0" \
-	"mmcblk=0\0" \
+	"mmcblk=1\0" \
 	"mmcautodetect=yes\0" \
 	"bootdir=/boot\0" \
 	"mmcrootpart=1\0" \
@@ -127,7 +127,6 @@
 #define BOOT_ENV_SETTINGS	MMC_BOOT_ENV_SETTINGS
 #define CONFIG_BOOTCOMMAND \
 	"run ramsize_check; " \
-	"mmc dev ${mmcdev};" \
 	"mmc dev ${mmcdev}; if mmc rescan; then " \
 		"if run loadbootenv; then " \
 			"run importbootenv; " \
@@ -223,7 +222,7 @@
 #endif
 #endif
 
-#define CONFIG_SYS_MMC_ENV_DEV		0   	/* USDHC1 */
+#define CONFIG_SYS_MMC_ENV_DEV		1   	/* USDHC2 */
 #define CONFIG_SYS_MMC_ENV_PART		0	/* user area */
 
 #if defined(CONFIG_ENV_IS_IN_MMC)
