@@ -144,6 +144,10 @@
 
 #endif
 
+/* Make sure we save the environment on the first boot, 
+ * otherwise fw_setenv won't work from linux */
+#define CONFIG_PREBOOT "setenv preboot; saveenv"
+
 #define OPT_ENV_SETTINGS \
 	"optargs=setenv bootargs ${bootargs} g_ether.host_addr=${eth2addr} g_ether.dev_addr=${eth3addr} ds_serial=${serial} ${kernelargs};\0"
 
