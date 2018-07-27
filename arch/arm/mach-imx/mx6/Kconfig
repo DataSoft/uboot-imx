@@ -595,6 +595,15 @@ config TARGET_SAMTEC_VINING_2000
 	select DM
 	select DM_THERMAL
 
+config TARGET_VARSOM_1189
+	bool "varsom_1189"
+	select BOARD_LATE_INIT
+	select SUPPORT_SPL
+	select MX6UL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+
 config TARGET_VARSOM_1233
 	bool "varsom_1233"
 	select BOARD_LATE_INIT
@@ -653,6 +662,7 @@ source "board/boundary/nitrogen6x/Kconfig"
 source "board/ccv/xpress/Kconfig"
 source "board/compulab/cm_fx6/Kconfig"
 source "board/congatec/cgtqmx6eval/Kconfig"
+source "board/datasoft/varsom-1189/Kconfig"
 source "board/datasoft/varsom-1233/Kconfig"
 source "board/dhelectronics/dh_imx6/Kconfig"
 source "board/el/el6x/Kconfig"
