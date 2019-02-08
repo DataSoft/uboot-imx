@@ -511,6 +511,20 @@ static void setup_usb(void)
 					 ARRAY_SIZE(usb_otg_pads));
 }
 
+static iomux_v3_cfg_t const gpio_led_pads[] = {
+	MX6_PAD_LCD_DATA17__GPIO3_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+static void setup_leds(void)
+{
+	imx_iomux_v3_setup_multiple_pads(gpio_led_pads,
+					 ARRAY_SIZE(gpio_led_pads));
+
+	/* The Ctrl/Zero blue LED comes on faintly at powerup.  Clear it */
+	gpio_request(IMX_GPIO_NR(3, 22), "cz_blue_led");
+	gpio_direction_output(IMX_GPIO_NR(3, 22) , 1);
+}
+
 int board_usb_phy_mode(int port)
 {
 	if (port == 1) {
@@ -674,6 +688,8 @@ int board_init(void)
 #ifdef CONFIG_NAND_MXS
 	setup_gpmi_nand();
 #endif
+
+	setup_leds();
 
 	return 0;
 }
