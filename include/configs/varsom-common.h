@@ -155,7 +155,10 @@
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	BOOT_ENV_SETTINGS \
 	OPT_ENV_SETTINGS \
-	"bootcmd_mfg=ums 0 mmc 1\0" \
+	"bootcmd_mfg=mmc erase 0 0x2000; "\
+		"fuse prog -y 0 5 0x00002a60; "\
+		"fuse prog -y 0 6 0x00000010; " \
+		"ums 0 mmc 1\0" \
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
