@@ -240,7 +240,7 @@ static int check_env(char *var, char *val)
 	if (var == NULL || val == NULL)
 		return 0;
 
-	read_val = getenv(var);
+	read_val = env_get(var);
 
 	if ((read_val != NULL) &&
 			(strcmp(read_val, val) == 0)) {
@@ -339,10 +339,10 @@ void board_late_mmc_init(void)
 	if (!check_env("mmcautodetect", "yes"))
 		return;
 
-	setenv_ulong("mmcdev", dev_no);
+	env_set_ulong("mmcdev", dev_no);
 
 	/* Set mmcblk env */
-	setenv_ulong("mmcblk", mmc_map_to_kernel_blk(dev_no));
+	env_set_ulong("mmcblk", mmc_map_to_kernel_blk(dev_no));
 
 	sprintf(cmd, "mmc dev %d", dev_no);
 	run_command(cmd, 0);
@@ -439,12 +439,12 @@ static void set_splashsource_to_boot_rootfs(void)
 		return;
 
 #ifdef CONFIG_NAND_BOOT
-	setenv("splashsource", "nand");
+	env_set("splashsource", "nand");
 #else
 	if (mmc_get_env_dev() == 0)
-		setenv("splashsource", "sd");
+		env_set("splashsource", "sd");
 	else if (mmc_get_env_dev() == 1)
-		setenv("splashsource", "emmc");
+		env_set("splashsource", "emmc");
 #endif
 }
 
@@ -456,7 +456,7 @@ int splash_screen_prepare(void)
 	char emmc_devpart_str[5];
 	u32 sd_part, emmc_part;
 
-	sd_part = emmc_part = getenv_ulong("mmcrootpart", 10, 0);
+	sd_part = emmc_part = env_get_ulong("mmcrootpart", 10, 0);
 
 	sprintf(sd_devpart_str, "0:%d", sd_part);
 	sprintf(emmc_devpart_str, "1:%d", emmc_part);
@@ -707,65 +707,65 @@ int board_late_init(void)
 		print_emmc_size();
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
-	setenv("board_name", "VARSOM-1233");
+	env_set("board_name", "VARSOM-1233");
 
 	cpurev = get_cpu_rev();
 	imxtype = (cpurev & 0xFF000) >> 12;
 
 	if (imxtype == MXC_CPU_MX6ULL)
-		setenv("soc_type", "imx6ull");
+		env_set("soc_type", "imx6ull");
 	else
-		setenv("soc_type", "imx6ul");
+		env_set("soc_type", "imx6ul");
 
 	snprintf(sdram_size_str, SDRAM_SIZE_STR_LEN, "%d", (int) (gd->ram_size / 1024 / 1024));
-	setenv("sdram_size", sdram_size_str);
+	env_set("sdram_size", sdram_size_str);
 
 	switch (get_boot_device()) {
 	case SD1_BOOT:
 	case MMC1_BOOT:
-		setenv("boot_dev", "sd");
+		env_set("boot_dev", "sd");
 		break;
 	case SD2_BOOT:
 	case MMC2_BOOT:
-		setenv("boot_dev", "emmc");
+		env_set("boot_dev", "emmc");
 		break;
 	case NAND_BOOT:
-		setenv("boot_dev", "nand");
+		env_set("boot_dev", "nand");
 		break;
 	default:
-		setenv("boot_dev", "unknown");
+		env_set("boot_dev", "unknown");
 		break;
 	}
 
 	if (var_eeprom_v2_cfg.som_info & 0x4)
-		setenv("wifi", "yes");
+		env_set("wifi", "yes");
 	else
-		setenv("wifi", "no");
+		env_set("wifi", "no");
 
 	switch ((var_eeprom_v2_cfg.som_info >> 3) & 0x3) {
 	case 0x0:
-		setenv("som_rev", "2.4G"); /* Rev 1.x */
+		env_set("som_rev", "2.4G"); /* Rev 1.x */
 		break;
 	case 0x1:
-		setenv("som_rev", "5G"); /* Rev 2.x */
+		env_set("som_rev", "5G"); /* Rev 2.x */
 		break;
 	default:
-		setenv("som_rev", "unknown");
+		env_set("som_rev", "unknown");
 		break;
 	}
 
 	switch (var_eeprom_v2_cfg.som_info & 0x3) {
 	case 0x00:
-		setenv("som_storage", "none");
+		env_set("som_storage", "none");
 		break;
 	case 0x01:
-		setenv("som_storage", "nand");
+		env_set("som_storage", "nand");
 		break;
 	case 0x02:
-		setenv("som_storage", "emmc");
+		env_set("som_storage", "emmc");
 		break;
 	default:
-		setenv("som_storage", "unknown");
+		env_set("som_storage", "unknown");
 		break;
 	}
 #endif

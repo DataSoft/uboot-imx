@@ -461,7 +461,7 @@ int mac_read_from_eeprom(void)
 		memset(e.mac[8], 0xff, 6);
 #endif
 
-	setenv("serial", (char *)e.sn);
+	env_set("serial", (char *)e.sn);
 
 	for (i = 0; i < min(e.mac_count, (u8)MAX_NUM_PORTS); i++) {
 		if (memcmp(&e.mac[i], "\0\0\0\0\0\0", 6) &&
@@ -480,8 +480,8 @@ int mac_read_from_eeprom(void)
 			/* Only initialize environment variables that are blank
 			 * (i.e. have not yet been set)
 			 */
-			if (!getenv(enetvar))
-				setenv(enetvar, ethaddr);
+			if (!env_get(enetvar))
+				env_set(enetvar, ethaddr);
 		}
 	}
 
