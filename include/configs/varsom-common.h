@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2015 Freescale Semiconductor, Inc.
  *
- * Copyright (C) 2015-2017 Variscite Ltd.
+ * Copyright (C) 2015-2019 Variscite Ltd.
  *
  * Copyright (C) 2018 DataSoft Corp
  *
@@ -26,16 +26,17 @@
 #undef CONFIG_SPL_BSS_MAX_SIZE
 #undef CONFIG_SYS_SPL_MALLOC_START
 #undef CONFIG_SYS_SPL_MALLOC_SIZE
-#undef CONFIG_SYS_TEXT_BASE
 
 #define CONFIG_SPL_BSS_START_ADDR	0x87000000
 #define CONFIG_SPL_BSS_MAX_SIZE		0x100000	/* 1 MB */
 #define CONFIG_SYS_SPL_MALLOC_START	0x87100000
 #define CONFIG_SYS_SPL_MALLOC_SIZE	0x100000	/* 1 MB */
-#define CONFIG_SYS_TEXT_BASE		0x86000000
 
 #undef CONFIG_LOADADDR
 #define CONFIG_LOADADDR			0x82000000
+
+/* No need to instantiate the CAAM RNG in U-Boot */
+#undef CONFIG_IMX_SEC_INIT
 
 #define CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 
@@ -196,8 +197,6 @@
 #define CONFIG_SYS_MEMTEST_START	0x80000000
 #define CONFIG_SYS_MEMTEST_END		(CONFIG_SYS_MEMTEST_START + 0x8000000)
 
-#define CONFIG_STACKSIZE		SZ_128K
-
 /* Physical Memory Map */
 #define CONFIG_NR_DRAM_BANKS		1
 #define PHYS_SDRAM			MMDC0_ARB_BASE_ADDR
@@ -213,10 +212,7 @@
 
 #ifdef CONFIG_NAND_BOOT
 #define CONFIG_CMD_NAND
-#define CONFIG_ENV_IS_IN_NAND
 #define CONFIG_SYS_NAND_U_BOOT_OFFS	0x200000
-#else
-#define CONFIG_ENV_IS_IN_MMC
 #endif
 
 /* NAND pin conflicts with usdhc2 */
@@ -245,13 +241,9 @@
 #define CONFIG_CMD_NAND_TRIMFFS
 
 /* UBI/UBIFS support */
-#define CONFIG_CMD_UBIFS
 #define CONFIG_UBI_SILENCE_MSG
-#define CONFIG_RBTREE
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
-#define CONFIG_CMD_MTDPARTS
-#define CONFIG_LZO
 
 #define MTDIDS_DEFAULT		"nand0=nandflash-0"
 
@@ -273,6 +265,7 @@
 
 /* NAND stuff */
 #define CONFIG_NAND_MXS
+#define CONFIG_NAND_MXS_BCH_LEGACY_GEO
 #define CONFIG_SYS_MAX_NAND_DEVICE	1
 #define CONFIG_SYS_NAND_BASE		0x40000000
 #define CONFIG_SYS_NAND_5_ADDR_CYCLE
@@ -310,7 +303,6 @@
 
 /* USB Configs */
 #ifdef CONFIG_CMD_USB
-#define CONFIG_USB_EHCI
 #define CONFIG_EHCI_HCD_INIT_AFTER_RESET
 #define CONFIG_USB_HOST_ETHER
 #define CONFIG_USB_ETHER_ASIX

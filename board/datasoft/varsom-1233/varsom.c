@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2015 Freescale Semiconductor, Inc.
  *
- * Copyright (C) 2015-2017 Variscite Ltd.
+ * Copyright (C) 2015-2019 Variscite Ltd.
  *
  * SPDX-License-Identifier:	GPL-2.0+
  */
@@ -13,9 +13,9 @@
 #include <asm/arch/mx6-pins.h>
 #include <asm/arch/sys_proto.h>
 #include <asm/gpio.h>
-#include <asm/imx-common/iomux-v3.h>
-#include <asm/imx-common/boot_mode.h>
-#include <asm/imx-common/mxc_i2c.h>
+#include <asm/mach-imx/iomux-v3.h>
+#include <asm/mach-imx/boot_mode.h>
+#include <asm/mach-imx/mxc_i2c.h>
 #include <asm/io.h>
 #include <common.h>
 #include <fsl_esdhc.h>
@@ -29,7 +29,7 @@
 #include <usb/ehci-ci.h>
 
 #ifdef CONFIG_VIDEO_MXS
-#include <asm/imx-common/video.h>
+#include <asm/mach-imx/video.h>
 #include "../drivers/video/mxcfb.h"
 #endif
 
@@ -106,28 +106,73 @@ static struct i2c_pads_info i2c_pad_info2 = {
 };
 #endif
 
+
+#ifdef CONFIG_SYS_I2C
+static int var_eeprom_get_ram_size(void)
+{
+	u32 read_eeprom_magic;
+	u8  read_ram_size;
+
+	i2c_set_bus_num(VAR_DART_EEPROM_I2C_BUS);
+	if (i2c_probe(VAR_DART_EEPROM_I2C_ADDR)) {
+		eeprom_v2_debug("\nError: Couldn't find EEPROM device\n");
+		return -1;
+	}
+
+	if ((i2c_read(VAR_DART_EEPROM_I2C_ADDR,
+			offsetof(struct var_eeprom_v2_cfg, variscite_magic),
+			1,
+			(u8 *) &read_eeprom_magic,
+			sizeof(read_eeprom_magic))) ||
+	   (i2c_read(VAR_DART_EEPROM_I2C_ADDR + 1,
+			offsetof(struct var_eeprom_v2_cfg, dram_size) & 0xff,
+			1,
+			(u8 *) &read_ram_size,
+			sizeof(read_ram_size))))
+	{
+		eeprom_v2_debug("\nError reading data from EEPROM\n");
+		return -1;
+	}
+
+	if (VARISCITE_MAGIC_V2 != read_eeprom_magic) {
+		eeprom_v2_debug("\nError: Data on EEPROM is invalid\n");
+		return -1;
+	}
+	return (read_ram_size * SZ_128M);
+}
+#endif
+
 int dram_init(void)
 {
-	unsigned int volatile * const port1 = (unsigned int *) PHYS_SDRAM;
-	unsigned int volatile * port2;
-	unsigned int volatile * ddr_cs0_end = (unsigned int *) DDR0_CS0_END;
+#ifdef CONFIG_SYS_I2C
+	int eeprom_ram_size = var_eeprom_get_ram_size();
 
-	/* Set the sdram_size to the actually configured one */
-	unsigned int sdram_size = ((*ddr_cs0_end) - 63) * 32;
-	do {
-		port2 = (unsigned int volatile *) (PHYS_SDRAM + ((sdram_size * 1024 * 1024) / 2));
+	if (eeprom_ram_size > SZ_512M)
+		gd->ram_size = get_ram_size((void *)PHYS_SDRAM, eeprom_ram_size);
+	else
+#endif
+	{
+		unsigned int volatile * const port1 = (unsigned int *) PHYS_SDRAM;
+		unsigned int volatile * port2;
+		unsigned int volatile * ddr_cs0_end = (unsigned int *) DDR0_CS0_END;
 
-		*port2 = 0;		/* write zero to start of second half of memory. */
-		*port1 = 0x3f3f3f3f;	/* write pattern to start of memory. */
+		/* Set the sdram_size to the actually configured one */
+		unsigned int sdram_size = ((*ddr_cs0_end) - 63) * 32;
+		do {
+			port2 = (unsigned int volatile *) (PHYS_SDRAM + ((sdram_size * 1024 * 1024) / 2));
 
-		if ((*port2 == 0x3f3f3f3f) && (sdram_size > 128))
-			sdram_size = sdram_size / 2;	/* Next step devide size by half */
-		else
-			if (*port2 == 0) break;		/* Done actual size found. */
+			*port2 = 0;		/* write zero to start of second half of memory. */
+			*port1 = 0x3f3f3f3f;	/* write pattern to start of memory. */
 
-	} while (sdram_size > 128);
+			if ((*port2 == 0x3f3f3f3f) && (sdram_size > 128))
+				sdram_size = sdram_size / 2;	/* Next step devide size by half */
+			else
+				if (*port2 == 0) break;		/* Done actual size found. */
 
-	gd->ram_size = (sdram_size * 1024 * 1024);
+		} while (sdram_size > 128);
+
+		gd->ram_size = (sdram_size * 1024 * 1024);
+	}
 
 	return 0;
 }
@@ -234,7 +279,8 @@ int board_mmc_get_env_dev(int devno)
 	return devno;
 }
 
-static int check_env(char *var, char *val)
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_ENV_SUPPORT)
+static int env_check(char *var, char *val)
 {
 	char *read_val;
 	if (var == NULL || val == NULL)
@@ -249,6 +295,7 @@ static int check_env(char *var, char *val)
 
 	return 0;
 }
+#endif
 
 int mmc_map_to_kernel_blk(int dev_no)
 {
@@ -331,12 +378,13 @@ int board_mmc_init(bd_t *bis)
 #endif
 }
 
+#ifndef CONFIG_SPL_BUILD
 void board_late_mmc_init(void)
 {
 	char cmd[32];
 	u32 dev_no = mmc_get_env_dev();
 
-	if (!check_env("mmcautodetect", "yes"))
+	if (!env_check("mmcautodetect", "yes"))
 		return;
 
 	env_set_ulong("mmcdev", dev_no);
@@ -396,15 +444,17 @@ static iomux_v3_cfg_t const pwm_pads[] = {
 
 void do_enable_parallel_lcd(struct display_info_t const *dev)
 {
-	enable_lcdif_clock(dev->bus, 1);
+	if (!is_cpu_type(MXC_CPU_MX6ULZ)) {
+		enable_lcdif_clock(dev->bus, 1);
 
-	imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
+		imx_iomux_v3_setup_multiple_pads(lcd_pads, ARRAY_SIZE(lcd_pads));
 
-	imx_iomux_v3_setup_multiple_pads(pwm_pads, ARRAY_SIZE(pwm_pads));
+		imx_iomux_v3_setup_multiple_pads(pwm_pads, ARRAY_SIZE(pwm_pads));
 
-	/* Set Brightness to high */
-	gpio_request(IMX_GPIO_NR(3, 5), "backlight");
-	gpio_direction_output(IMX_GPIO_NR(3, 5) , 1);
+		/* Set Brightness to high */
+		gpio_request(IMX_GPIO_NR(3, 5), "backlight");
+		gpio_direction_output(IMX_GPIO_NR(3, 5) , 1);
+	}
 }
 
 #define MHZ2PS(f)       (1000000/(f))
@@ -435,7 +485,7 @@ size_t display_count = ARRAY_SIZE(displays);
 #ifdef CONFIG_SPLASH_SCREEN
 static void set_splashsource_to_boot_rootfs(void)
 {
-	if (!check_env("splashsourceauto", "yes"))
+	if (!env_check("splashsourceauto", "yes"))
 		return;
 
 #ifdef CONFIG_NAND_BOOT
@@ -450,47 +500,50 @@ static void set_splashsource_to_boot_rootfs(void)
 
 int splash_screen_prepare(void)
 {
-	int ret=0;
+	int ret = 0;
 
-	char sd_devpart_str[5];
-	char emmc_devpart_str[5];
-	u32 sd_part, emmc_part;
+	if (!is_cpu_type(MXC_CPU_MX6ULZ)) {
+		char sd_devpart_str[5];
+		char emmc_devpart_str[5];
+		u32 sd_part, emmc_part;
 
-	sd_part = emmc_part = env_get_ulong("mmcrootpart", 10, 0);
+		sd_part = emmc_part = env_get_ulong("mmcrootpart", 10, 0);
 
-	sprintf(sd_devpart_str, "0:%d", sd_part);
-	sprintf(emmc_devpart_str, "1:%d", emmc_part);
+		sprintf(sd_devpart_str, "0:%d", sd_part);
+		sprintf(emmc_devpart_str, "1:%d", emmc_part);
 
-	struct splash_location var_splash_locations[] = {
-		{
-			.name = "sd",
-			.storage = SPLASH_STORAGE_MMC,
-			.flags = SPLASH_STORAGE_FS,
-			.devpart = sd_devpart_str,
-		},
-		{
-			.name = "emmc",
-			.storage = SPLASH_STORAGE_MMC,
-			.flags = SPLASH_STORAGE_FS,
-			.devpart = emmc_devpart_str,
-		},
-		{
-			.name = "nand",
-			.storage = SPLASH_STORAGE_NAND,
-			.flags = SPLASH_STORAGE_FS,
-			.mtdpart = "rootfs",
-			.ubivol = "ubi0:rootfs",
-		},
-	};
+		struct splash_location var_splash_locations[] = {
+			{
+				.name = "sd",
+				.storage = SPLASH_STORAGE_MMC,
+				.flags = SPLASH_STORAGE_FS,
+				.devpart = sd_devpart_str,
+			},
+			{
+				.name = "emmc",
+				.storage = SPLASH_STORAGE_MMC,
+				.flags = SPLASH_STORAGE_FS,
+				.devpart = emmc_devpart_str,
+			},
+			{
+				.name = "nand",
+				.storage = SPLASH_STORAGE_NAND,
+				.flags = SPLASH_STORAGE_FS,
+				.mtdpart = "rootfs",
+				.ubivol = "ubi0:rootfs",
+			},
+		};
 
-	set_splashsource_to_boot_rootfs();
+		set_splashsource_to_boot_rootfs();
 
-	ret = splash_source_load(var_splash_locations,
-			ARRAY_SIZE(var_splash_locations));
+		ret = splash_source_load(var_splash_locations,
+				ARRAY_SIZE(var_splash_locations));
+	}
 
 	return ret;
 }
 #endif /* CONFIG_SPLASH_SCREEN */
+#endif /* CONFIG_SPL_BUILD */
 
 #ifdef CONFIG_USB_EHCI_MX6
 #ifndef CONFIG_DM_USB
@@ -514,9 +567,11 @@ int board_usb_phy_mode(int port)
 	if (port == 1) {
 		return USB_INIT_HOST;
 	} else {
-		if (check_env("usbmode", "host"))
+#if !defined(CONFIG_SPL_BUILD) || defined(CONFIG_SPL_ENV_SUPPORT)
+		if (env_check("usbmode", "host"))
 			return USB_INIT_HOST;
 		else
+#endif
 			return USB_INIT_DEVICE;
 	}
 }
@@ -584,55 +639,62 @@ static void setup_iomux_fec(int fec_id)
 
 int board_eth_init(bd_t *bis)
 {
-	int ret;
-	setup_iomux_fec(CONFIG_FEC_ENET_DEV);
+	int ret = 0;
+	if (!is_cpu_type(MXC_CPU_MX6ULZ)) {
+		setup_iomux_fec(CONFIG_FEC_ENET_DEV);
 
-	ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
-				       CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
+		ret = fecmxc_initialize_multi(bis, CONFIG_FEC_ENET_DEV,
+				CONFIG_FEC_MXC_PHYADDR, IMX_FEC_BASE);
+	}
 
 #if defined(CONFIG_CI_UDC) && defined(CONFIG_USB_ETHER)
 	/* USB Ethernet Gadget */
 	usb_eth_initialize(bis);
 #endif
+
 	return ret;
 }
 
 static int setup_fec(int fec_id)
 {
-	struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
-	int ret;
+	if (!is_cpu_type(MXC_CPU_MX6ULZ)) {
+		struct iomuxc *const iomuxc_regs = (struct iomuxc *)IOMUXC_BASE_ADDR;
+		int ret;
 
-	if (fec_id == 0) {
-		/*
-		 * Use 50M anatop loopback REF_CLK1 for ENET1,
-		 * clear gpr1[13], set gpr1[17].
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
-				IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
-	} else {
-		/*
-		 * Use 50M anatop loopback REF_CLK2 for ENET2,
-		 * clear gpr1[14], set gpr1[18].
-		 */
-		clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
-				IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
+		if (fec_id == 0) {
+			/*
+			 * Use 50M anatop loopback REF_CLK1 for ENET1,
+			 * clear gpr1[13], set gpr1[17].
+			 */
+			clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC1_MASK,
+					IOMUX_GPR1_FEC1_CLOCK_MUX1_SEL_MASK);
+		} else {
+			/*
+			 * Use 50M anatop loopback REF_CLK2 for ENET2,
+			 * clear gpr1[14], set gpr1[18].
+			 */
+			clrsetbits_le32(&iomuxc_regs->gpr[1], IOMUX_GPR1_FEC2_MASK,
+					IOMUX_GPR1_FEC2_CLOCK_MUX1_SEL_MASK);
+		}
+
+		ret = enable_fec_anatop_clock(fec_id, ENET_50MHZ);
+		if (ret)
+			return ret;
+
+		enable_enet_clk(1);
 	}
-
-	ret = enable_fec_anatop_clock(fec_id, ENET_50MHZ);
-	if (ret)
-		return ret;
-
-	enable_enet_clk(1);
 
 	return 0;
 }
 
 int board_phy_config(struct phy_device *phydev)
 {
-	phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8190);
+	if (!is_cpu_type(MXC_CPU_MX6ULZ)) {
+		phy_write(phydev, MDIO_DEVAD_NONE, 0x1f, 0x8190);
 
-	if (phydev->drv->config)
-		phydev->drv->config(phydev);
+		if (phydev->drv->config)
+			phydev->drv->config(phydev);
+	}
 
 	return 0;
 }
@@ -646,6 +708,10 @@ static void setup_local_i2c(void)
 
 int board_early_init_f(void)
 {
+#ifdef CONFIG_VIDEO_MXS
+	if (is_cpu_type(MXC_CPU_MX6ULZ))
+		display_count = 0;
+#endif
 	setup_iomux_uart();
 
 #ifdef CONFIG_SYS_I2C_MXC
@@ -659,7 +725,7 @@ int board_init(void)
 	/* Address of boot parameters */
 	gd->bd->bi_boot_params = PHYS_SDRAM + 0x100;
 
-#ifdef	CONFIG_FEC_MXC
+#ifdef CONFIG_FEC_MXC
 	setup_fec(CONFIG_FEC_ENET_DEV);
 #endif
 
@@ -676,6 +742,7 @@ int board_init(void)
 	return 0;
 }
 
+#ifndef CONFIG_SPL_BUILD
 #ifdef CONFIG_CMD_BMODE
 static const struct boot_mode board_boot_modes[] = {
 	/* 4 bit bus width */
@@ -709,11 +776,10 @@ int board_late_init(void)
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
 	env_set("board_name", "VARSOM-1233");
 
-	cpurev = get_cpu_rev();
-	imxtype = (cpurev & 0xFF000) >> 12;
-
-	if (imxtype == MXC_CPU_MX6ULL)
+	if (is_cpu_type(MXC_CPU_MX6ULL))
 		env_set("soc_type", "imx6ull");
+	else if (is_cpu_type(MXC_CPU_MX6ULZ))
+		env_set("soc_type", "imx6ulz");
 	else
 		env_set("soc_type", "imx6ul");
 
@@ -779,11 +845,12 @@ int checkboard(void)
 
 	return 0;
 }
+#endif
 
 #ifdef CONFIG_SPL_BUILD
-#include <libfdt.h>
-#include <spl.h>
 #include <asm/arch/mx6-ddr.h>
+#include <linux/libfdt.h>
+#include <spl.h>
 
 static struct mx6ul_iomux_grp_regs mx6_grp_ioregs = {
 	.grp_addds = 0x00000030,
