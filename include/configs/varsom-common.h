@@ -44,7 +44,9 @@
 #define CONFIG_SYS_MALLOC_LEN		(16 * SZ_1M)
 
 #define CONFIG_MXC_UART
+#ifndef CONFIG_MXC_UART_BASE
 #define CONFIG_MXC_UART_BASE		UART5_BASE
+#endif
 
 /* MMC Configs */
 #ifdef CONFIG_FSL_USDHC
@@ -153,6 +155,10 @@
 #define OPT_ENV_SETTINGS \
 	"optargs=setenv bootargs ${bootargs} g_ether.host_addr=${eth2addr} g_ether.dev_addr=${eth3addr} ds_serial=${serial} ${kernelargs};\0"
 
+#ifndef LINUX_CONSOLE
+#define LINUX_CONSOLE	"ttymxc4"
+#endif
+
 #define CONFIG_EXTRA_ENV_SETTINGS \
 	BOOT_ENV_SETTINGS \
 	OPT_ENV_SETTINGS \
@@ -163,7 +169,7 @@
 	"bootenv=uEnv.txt\0" \
 	"script=boot.scr\0" \
 	"image=zImage\0" \
-	"console=ttymxc4\0" \
+	"console=" LINUX_CONSOLE "\0" \
 	"kernelargs=\0" \
 	"fdt_file=" FDT_FILE "\0" \
 	"fdt_addr=0x83000000\0" \

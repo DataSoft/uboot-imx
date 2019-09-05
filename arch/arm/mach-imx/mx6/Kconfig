@@ -622,6 +622,15 @@ config TARGET_VARSOM_1338
 	select DM_THERMAL
 	select BOARD_EARLY_INIT_F
 
+config TARGET_VARSOM_1341
+	bool "varsom_1341"
+	select BOARD_LATE_INIT
+	select SUPPORT_SPL
+	select MX6UL
+	select DM
+	select DM_THERMAL
+	select BOARD_EARLY_INIT_F
+
 config TARGET_WANDBOARD
 	bool "wandboard"
 	select MX6QDL
@@ -674,6 +683,7 @@ source "board/congatec/cgtqmx6eval/Kconfig"
 source "board/datasoft/varsom-1189/Kconfig"
 source "board/datasoft/varsom-1233/Kconfig"
 source "board/datasoft/varsom-1338/Kconfig"
+source "board/datasoft/varsom-1341/Kconfig"
 source "board/dhelectronics/dh_imx6/Kconfig"
 source "board/el/el6x/Kconfig"
 source "board/embest/mx6boards/Kconfig"
