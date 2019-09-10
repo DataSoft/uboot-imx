@@ -841,7 +841,7 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: DataSoft varsom-1338\n");
+	puts("Board: DataSoft varsom-1341\n");
 
 	return 0;
 }
