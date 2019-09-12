@@ -563,8 +563,9 @@ static void setup_usb(void)
 }
 
 static iomux_v3_cfg_t const gpio_led_pads[] = {
-	MX6_PAD_LCD_DATA17__GPIO3_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),
-	MX6_PAD_LCD_DATA18__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NAND_WP_B__GPIO4_IO11  | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NAND_CE1_B__GPIO4_IO14 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_NAND_DQS__GPIO4_IO16   | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
 static void setup_leds(void)
@@ -572,11 +573,13 @@ static void setup_leds(void)
 	imx_iomux_v3_setup_multiple_pads(gpio_led_pads,
 					 ARRAY_SIZE(gpio_led_pads));
 
-	/* The Ctrl/Zero blue LED comes on faintly at powerup.  Clear it */
-	gpio_request(IMX_GPIO_NR(3, 22), "cz-blue-led");
-	gpio_direction_output(IMX_GPIO_NR(3, 22) , 1);
-	gpio_request(IMX_GPIO_NR(3, 23), "cz-green-led");
-	gpio_direction_output(IMX_GPIO_NR(3, 23) , 1);
+	/* The status LED comes on faintly at powerup.  Clear it */
+	gpio_request(IMX_GPIO_NR(4, 11), "red-led");
+	gpio_direction_output(IMX_GPIO_NR(4, 11) , 1);
+	gpio_request(IMX_GPIO_NR(4, 14), "blue-led");
+	gpio_direction_output(IMX_GPIO_NR(4, 14) , 1);
+	gpio_request(IMX_GPIO_NR(4, 16), "green-led");
+	gpio_direction_output(IMX_GPIO_NR(4, 16) , 1);
 }
 
 int board_usb_phy_mode(int port)
@@ -776,7 +779,6 @@ int board_late_init(void)
 {
 	char sdram_size_str[SDRAM_SIZE_STR_LEN];
 	struct var_eeprom_v2_cfg var_eeprom_v2_cfg = {0};
-	u32 imxtype, cpurev;
 
 #ifdef CONFIG_CMD_BMODE
 	add_board_boot_modes(board_boot_modes);
