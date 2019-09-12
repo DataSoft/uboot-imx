@@ -177,9 +177,9 @@ int dram_init(void)
 	return 0;
 }
 
-static iomux_v3_cfg_t const uart1_pads[] = {
-	MX6_PAD_UART1_TX_DATA__UART1_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
-	MX6_PAD_UART1_RX_DATA__UART1_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
+static iomux_v3_cfg_t const uart5_pads[] = {
+	MX6_PAD_CSI_DATA00__UART5_DCE_TX | MUX_PAD_CTRL(UART_PAD_CTRL),
+	MX6_PAD_CSI_DATA01__UART5_DCE_RX | MUX_PAD_CTRL(UART_PAD_CTRL),
 	MX6_PAD_CSI_VSYNC__GPIO4_IO19 | MUX_PAD_CTRL(NO_PAD_CTRL),
 };
 
@@ -269,7 +269,7 @@ static void setup_gpmi_nand(void)
 
 static void setup_iomux_uart(void)
 {
-	imx_iomux_v3_setup_multiple_pads(uart1_pads, ARRAY_SIZE(uart1_pads));
+	imx_iomux_v3_setup_multiple_pads(uart5_pads, ARRAY_SIZE(uart5_pads));
 }
 
 static struct fsl_esdhc_cfg usdhc_cfg[2];
@@ -562,6 +562,23 @@ static void setup_usb(void)
 					 ARRAY_SIZE(usb_otg_pads));
 }
 
+static iomux_v3_cfg_t const gpio_led_pads[] = {
+	MX6_PAD_LCD_DATA17__GPIO3_IO22 | MUX_PAD_CTRL(NO_PAD_CTRL),
+	MX6_PAD_LCD_DATA18__GPIO3_IO23 | MUX_PAD_CTRL(NO_PAD_CTRL),
+};
+
+static void setup_leds(void)
+{
+	imx_iomux_v3_setup_multiple_pads(gpio_led_pads,
+					 ARRAY_SIZE(gpio_led_pads));
+
+	/* The Ctrl/Zero blue LED comes on faintly at powerup.  Clear it */
+	gpio_request(IMX_GPIO_NR(3, 22), "cz-blue-led");
+	gpio_direction_output(IMX_GPIO_NR(3, 22) , 1);
+	gpio_request(IMX_GPIO_NR(3, 23), "cz-green-led");
+	gpio_direction_output(IMX_GPIO_NR(3, 23) , 1);
+}
+
 int board_usb_phy_mode(int port)
 {
 	if (port == 1) {
@@ -738,6 +755,8 @@ int board_init(void)
 #ifdef CONFIG_NAND_MXS
 	setup_gpmi_nand();
 #endif
+
+	setup_leds();
 
 	return 0;
 }
