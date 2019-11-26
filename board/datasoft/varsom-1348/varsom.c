@@ -794,7 +794,7 @@ int board_late_init(void)
 		print_emmc_size();
 
 #ifdef CONFIG_ENV_VARS_UBOOT_RUNTIME_CONFIG
-	env_set("board_name", "VARSOM-1189");
+	env_set("board_name", "VARSOM-1348");
 
 	if (is_cpu_type(MXC_CPU_MX6ULL))
 		env_set("soc_type", "imx6ull");
@@ -861,7 +861,7 @@ int board_late_init(void)
 
 int checkboard(void)
 {
-	puts("Board: DataSoft varsom-1189\n");
+	puts("Board: DataSoft varsom-1348\n");
 
 	return 0;
 }
